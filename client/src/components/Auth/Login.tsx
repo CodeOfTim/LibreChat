@@ -101,9 +101,7 @@ function Login() {
   // Check if forwarded auth is enabled
   const isForwardedAuthEnabled = startupConfig?.forwardedAuthEnabled;
 
-  // Render fallback UI if forwarded auth is enabled
   if (isForwardedAuthEnabled) {
-    window.location.href = '/'; // Redirect to home page, which will trigger the forwarded auth
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
         <p className="text-lg font-semibold">{localize('com_auth_authenticating')}</p>

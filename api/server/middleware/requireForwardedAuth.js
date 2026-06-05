@@ -17,6 +17,10 @@ const requireForwardedAuth = (req, res, next) => {
     return next();
   }
 
+  if (req.cookies && req.cookies.refreshToken) {
+    return next();
+  }
+
   // Authenticate using the forwardedAuth strategy
   passport.authenticate('forwardedAuth', { session: false }, async (err, user) => {
     if (err) {
