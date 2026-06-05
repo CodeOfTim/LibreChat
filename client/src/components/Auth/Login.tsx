@@ -71,6 +71,33 @@ function Login() {
     }
   }, [shouldAutoRedirect, startupConfig]);
 
+  // ── Forwarded auth debug panel state ──────────────────────────────────────
+  // These hooks must live before any early return.
+  type ForwardedAuthDebug = {
+    status: string;
+    config: Record<string, string | boolean | null>;
+    resolution: { username: string | null; email: string | null; source: string } | null;
+    headers: Record<string, { present: boolean; value?: string; length?: number; type?: string; decoded?: Record<string, unknown>; decodeError?: string | null }>;
+    issues: string[];
+    hint: string | null;
+  };
+  const [forwardedAuthDebug, setForwardedAuthDebug] = useState<ForwardedAuthDebug | null>(null);
+  const [forwardedAuthDebugLoading, setForwardedAuthDebugLoading] = useState(false);
+
+  useEffect(() => {
+    if (!startupConfig?.forwardedAuthEnabled) {
+      return;
+    }
+    setForwardedAuthDebugLoading(true);
+    fetch('/api/auth/forwarded-auth/debug', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setForwardedAuthDebug(data as ForwardedAuthDebug | null);
+        setForwardedAuthDebugLoading(false);
+      })
+      .catch(() => setForwardedAuthDebugLoading(false));
+  }, [startupConfig?.forwardedAuthEnabled]);
+
   if (shouldAutoRedirect) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -101,10 +128,97 @@ function Login() {
   // Check if forwarded auth is enabled
   const isForwardedAuthEnabled = startupConfig?.forwardedAuthEnabled;
 
+  // Render fallback UI if forwarded auth is enabled.
+  // AuthContext's silentRefresh() will pick up the refresh cookie set by the server
+  // middleware on the initial page load and authenticate the user automatically.
   if (isForwardedAuthEnabled) {
+    const debugOk = forwardedAuthDebug?.status === 'would-authenticate';
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
         <p className="text-lg font-semibold">{localize('com_auth_authenticating')}</p>
+
+        {/* Debug panel — always visible when forwarded auth is active */}
+        <div className="mt-8 w-full max-w-2xl rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Forwarded Auth Debug
+          </p>
+
+          {forwardedAuthDebugLoading && (
+            <p className="text-xs text-gray-400">Loading debug info…</p>
+          )}
+
+          {forwardedAuthDebug && (
+            <>
+              <span
+                className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${
+                  debugOk
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                }`}
+              >
+                {forwardedAuthDebug.status}
+              </span>
+
+              {forwardedAuthDebug.resolution && (
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="font-medium text-gray-600 dark:text-gray-400">Username: </span>
+                    <code className="font-mono">
+                      {forwardedAuthDebug.resolution.username ?? '(none)'}
+                    </code>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600 dark:text-gray-400">Email: </span>
+                    <code className="font-mono">
+                      {forwardedAuthDebug.resolution.email ?? '(none)'}
+                    </code>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-medium text-gray-600 dark:text-gray-400">Source: </span>
+                    <code className="font-mono">{forwardedAuthDebug.resolution.source}</code>
+                  </div>
+                </div>
+              )}
+
+              {forwardedAuthDebug.issues.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-red-600 dark:text-red-400">Issues:</p>
+                  <ul className="mt-1 list-disc pl-4 text-xs text-red-700 dark:text-red-300">
+                    {forwardedAuthDebug.issues.map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {forwardedAuthDebug.hint && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  {forwardedAuthDebug.hint}
+                </p>
+              )}
+
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                  Received headers &amp; config
+                </summary>
+                <pre className="mt-2 max-h-64 overflow-auto rounded bg-gray-50 p-3 text-xs leading-relaxed dark:bg-gray-800">
+                  {JSON.stringify(
+                    { config: forwardedAuthDebug.config, headers: forwardedAuthDebug.headers },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </details>
+            </>
+          )}
+
+          {!forwardedAuthDebugLoading && !forwardedAuthDebug && (
+            <p className="text-xs text-gray-400">
+              Debug endpoint unavailable — check server logs.
+            </p>
+          )}
+        </div>
       </div>
     );
   }

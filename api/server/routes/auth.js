@@ -17,6 +17,7 @@ const {
 const { verify2FAWithTempToken } = require('~/server/controllers/auth/TwoFactorAuthController');
 const { logoutController } = require('~/server/controllers/auth/LogoutController');
 const { loginController } = require('~/server/controllers/auth/LoginController');
+const { forwardedAuthDebugController } = require('~/server/controllers/auth/ForwardedAuthDebugController');
 const { findBalanceByUser, upsertBalanceFields } = require('~/models');
 const { getAppConfig } = require('~/server/services/Config');
 const middleware = require('~/server/middleware');
@@ -93,5 +94,8 @@ router.post('/2fa/disable', middleware.requireJwtAuth, disable2FA);
 router.post('/2fa/backup/regenerate', middleware.requireJwtAuth, regenerateBackupCodes);
 
 router.get('/graph-token', middleware.requireJwtAuth, graphTokenController);
+
+// Forwarded auth: debug endpoint (FORWARD_AUTH_ENABLED=true required)
+router.get('/forwarded-auth/debug', forwardedAuthDebugController);
 
 module.exports = router;
