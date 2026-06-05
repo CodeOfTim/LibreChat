@@ -268,6 +268,7 @@ router.get('/', async function (req, res) {
       balance: balanceConfig,
       bundlerURL: process.env.SANDPACK_BUNDLER_URL,
       staticBundlerURL: process.env.SANDPACK_STATIC_BUNDLER_URL,
+      forwardedAuthEnabled: isEnabled(process.env.FORWARD_AUTH_ENABLED),
       sharePointFilePickerEnabled,
       sharePointBaseUrl: process.env.SHAREPOINT_BASE_URL,
       sharePointPickerGraphScope: process.env.SHAREPOINT_PICKER_GRAPH_SCOPE,

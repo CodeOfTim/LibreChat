@@ -12,6 +12,7 @@ const { githubAdminLogin } = githubLogin;
 const { setupSaml } = require('./samlStrategy');
 const appleLogin = require('./appleStrategy');
 const { appleAdminLogin } = appleLogin;
+const forwardedAuthLogin = require('./forwardedAuthStrategy');
 const ldapLogin = require('./ldapStrategy');
 const jwtLogin = require('./jwtStrategy');
 
@@ -34,4 +35,5 @@ module.exports = {
   ldapLogin,
   setupSaml,
   openIdJwtLogin,
+  forwardedAuthLogin,
 };
