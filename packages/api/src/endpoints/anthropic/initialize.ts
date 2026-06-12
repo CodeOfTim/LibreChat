@@ -1,6 +1,6 @@
 import { EModelEndpoint, AuthKeys } from 'librechat-data-provider';
 import type { BaseInitializeParams, InitializeResultBase, AnthropicConfigOptions } from '~/types';
-import { checkUserKeyExpiry, isEnabled } from '~/utils';
+import { checkUserKeyExpiry, isEnabled, resolveHeaders } from '~/utils';
 import { loadAnthropicVertexCredentials, getVertexCredentialOptions } from './vertex';
 import { getLLMConfig } from './llm';
 
@@ -20,6 +20,7 @@ export async function initializeAnthropic({
 }: BaseInitializeParams): Promise<InitializeResultBase> {
   void endpoint;
   const appConfig = req.config;
+  const anthropicConfig = appConfig?.endpoints?.[EModelEndpoint.anthropic];
   const { ANTHROPIC_API_KEY, ANTHROPIC_REVERSE_PROXY, PROXY } = process.env;
   const { key: expiresAt } = req.body;
 
@@ -66,7 +67,10 @@ export async function initializeAnthropic({
 
   const clientOptions: AnthropicConfigOptions = {
     proxy: PROXY ?? undefined,
-    reverseProxyUrl: ANTHROPIC_REVERSE_PROXY ?? undefined,
+    reverseProxyUrl: anthropicConfig?.baseURL ?? ANTHROPIC_REVERSE_PROXY ?? undefined,
+    headers: anthropicConfig?.headers
+      ? resolveHeaders({ headers: anthropicConfig.headers, user: req.user })
+      : undefined,
     modelOptions: {
       ...(model_parameters ?? {}),
       user: req.user?.id,
@@ -77,7 +81,6 @@ export async function initializeAnthropic({
     ...(vertexConfig && { vertexConfig }),
   };
 
-  const anthropicConfig = appConfig?.endpoints?.[EModelEndpoint.anthropic];
   const allConfig = appConfig?.endpoints?.all;
 
   const result = getLLMConfig(credentials, clientOptions);

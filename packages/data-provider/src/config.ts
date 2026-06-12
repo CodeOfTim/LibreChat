@@ -929,6 +929,8 @@ export const anthropicEndpointSchema = baseEndpointSchema.merge(
     vertex: vertexAISchema.optional(),
     /** Optional: List of available models */
     models: z.array(z.string()).optional(),
+    /** Custom headers (supports `{{LIBRECHAT_OPENID_ACCESS_TOKEN}}` placeholders) */
+    headers: z.record(z.string()).optional(),
   }),
 );
 

@@ -239,6 +239,13 @@ function getLLMConfig(
     requestOptions.anthropicApiUrl = options.reverseProxyUrl;
   }
 
+  if (options.headers && requestOptions.clientOptions) {
+    requestOptions.clientOptions.defaultHeaders = {
+      ...(requestOptions.clientOptions.defaultHeaders ?? {}),
+      ...options.headers,
+    };
+  }
+
   /** Handle defaultParams first - only process Anthropic-native params if undefined */
   if (options.defaultParams && typeof options.defaultParams === 'object') {
     for (const [key, value] of Object.entries(options.defaultParams)) {
